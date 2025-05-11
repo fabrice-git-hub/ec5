@@ -15,8 +15,6 @@ terraform {
 
 provider "aws" {
   region     = "us-east-1" # déclaration de la région
-  shared_credentials_files = [".aws/credentials"]
-  profile                  = "default"
 }
 
 # 1. VPC
@@ -68,14 +66,20 @@ resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public.id
 }
 
-# 6. Security group (SSH)
-resource "aws_security_group" "ssh" {
-  name        = "allow_ssh"
+# 6. Security group (SSH_HTTP)
+resource "aws_security_group" "ssh_http" {
+  name        = "allow_ssh_http"
   vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # à restreindre à ton IP en prod
+  }
+  ingress {
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"] # à restreindre à ton IP en prod
   }
@@ -88,7 +92,7 @@ resource "aws_security_group" "ssh" {
   }
 
   tags = {
-    Name = "allow_ssh"
+    Name = "allow_ssh_http"
   }
 }
 
@@ -98,12 +102,12 @@ resource "aws_instance" "web" {
   instance_type          = "t2.micro"
   key_name               = var.key_name
   subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.ssh.id]
+  vpc_security_group_ids = [aws_security_group.ssh_http.id]
   associate_public_ip_address = true
   user_data = file("install-ansible.sh")
 
   tags = {
-    Name = "web-${var.environment}"
+    Name = "web-${var.ENVIRONMENT_NAME}"
   }
 }
 

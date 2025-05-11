@@ -3,7 +3,7 @@ variable "key_name" {
   description = "Nom de la clé SSH"
 }
 
-variable "environment" {
+variable "ENVIRONMENT_NAME" {
   type = string
   description = "Environnement (test ou prod)"
 }
