@@ -15,8 +15,8 @@ terraform {
 
 provider "aws" {
   region     = "us-east-1" # déclaration de la région
-  access_key = "AKIAXTU4OY74IT7ZXMNJ"
-  secret_key = "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"
+  shared_credentials_files = [".aws/credentials"]
+  profile                  = "default"
 }
 
 # 1. VPC
