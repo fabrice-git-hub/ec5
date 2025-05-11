@@ -1,0 +1,53 @@
+---
+- hosts: all
+  become: true
+  vars:
+    environment_name: "{{ lookup('env','ENVIRONMENT_NAME') | default('prod') }}"
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install Node.js and Nginx
+      apt:
+        name:
+          - nodejs
+          - npm
+          - nginx
+        state: present
+
+    - name: Configure Nginx
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80;
+              location / {
+                  proxy_pass http://localhost:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          }
+      notify: restart nginx
+
+    - name: Set ENV variable
+      copy:
+        dest: /home/admin/ec5/node-app/.env
+        content: |
+          ENVIRONMENT_NAME={{ environment_name }}
+
+    - name: Start Node.js app
+      shell: |
+        cd /home/admin/ec5/node-app
+        nohup node index.js &
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
